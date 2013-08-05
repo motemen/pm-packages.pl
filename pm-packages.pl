@@ -10,8 +10,9 @@ use LWP::Simple qw(mirror);
 use List::MoreUtils qw(any);
 
 GetOptions(
-    cpan => \my $cpan,
-    core => \my $core,
+    'cpan'    => \my $cpan,
+    'core'    => \my $core,
+    'local:s' => \my $local,
 );
 
 my $root = dir($ENV{HOME}, '.pm-packages.pl');
@@ -42,6 +43,16 @@ if ($cpan) {
     );
     $prefix =~ s/^\Q$perlbrew_perls\E/perlbrew/;
     $prefix =~ s/^\Q$plenv_versions\E/plenv/;
+
+    if (defined $local) {
+        $local = 'local' unless length $local;
+        $local = dir($local)->absolute;
+
+        require lib;
+        lib->import("$local/lib/perl5");
+
+        $prefix .= "-$local"
+    }
 
     my $cache = $root->file(escape_filename("$prefix-installed"));
 
