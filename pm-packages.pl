@@ -45,21 +45,31 @@ if ($cpan) {
 
     my $cache = $root->file(escape_filename("$prefix-installed"));
 
+    my @source_dirs = grep $_->is_absolute, map dir($_), @INC;
+
     if (-e $cache && (my $cache_mtime = $cache->stat->mtime)) {
         my $cpanm_dir = dir($ENV{HOME}, '.cpanm');
-        if (-e $cpanm_dir && (my $cpanm_mtime = $cpanm_dir->stat->mtime)) {
-            if ($cache_mtime > $cpanm_mtime) {
-                print $_ for $cache->slurp;
-                exit 0;
+
+        my $cache_expired;
+        foreach my $dir (@source_dirs, $cpanm_dir) {
+            if (-e $dir && (my $mtime = $dir->stat->mtime)) {
+                if ($cache_mtime < $mtime) {
+                    $cache_expired++;
+                    last;
+                }
             }
+        }
+
+        unless ($cache_expired) {
+            print $_ for $cache->slurp;
+            exit 0;
         }
     }
 
     $cache->dir->mkpath;
     my $fh = $cache->openw;
 
-    foreach my $dir (@INC) {
-        next unless dir($dir)->is_absolute;
+    foreach my $dir (@source_dirs) {
         my @files = File::Find::Rule->file->name('*.pm')->in($dir);
         foreach my $file (@files) {
             next if any { $file =~ /^\Q$_\E/ } grep { /^\Q$dir\E\// } @INC;
