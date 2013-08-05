@@ -54,7 +54,7 @@ if ($cpan) {
         $prefix .= "-$local"
     }
 
-    my $cache = $root->file(escape_filename("$prefix-installed"));
+    my $cache = $root->file('cache', escape_filename($prefix));
 
     my @source_dirs = grep $_->is_absolute, map dir($_), @INC;
 
