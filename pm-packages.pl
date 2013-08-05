@@ -33,11 +33,15 @@ if ($cpan) {
 
     my $prefix = $Config::Config{prefix};
     my $perlbrew_perls = dir(
-        $ENV{PERLBREW_ROOT}
-            ? ($ENV{PERLBREW_ROOT}, 'perls', '')
-            : ($ENV{HOME}, qw(perl5 perlbrew perls), '')
+        ( $ENV{PERLBREW_ROOT} || ( $ENV{HOME}, 'perl5', 'perlbrew' ) ),
+        'perls', ''
+    );
+    my $plenv_versions = dir(
+        ( $ENV{PLENV_ROOT} || ( $ENV{HOME}, '.plenv' ) ),
+        'versions', ''
     );
     $prefix =~ s/^\Q$perlbrew_perls\E/perlbrew/;
+    $prefix =~ s/^\Q$plenv_versions\E/plenv/;
 
     my $cache = $root->file(escape_filename("$prefix-installed"));
 
