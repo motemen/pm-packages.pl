@@ -7,6 +7,7 @@ use File::Util qw(escape_filename);
 use Path::Class;
 use IO::Uncompress::Gunzip qw(gunzip);
 use LWP::Simple qw(mirror);
+use List::MoreUtils qw(any);
 
 GetOptions(
     cpan => \my $cpan,
@@ -53,10 +54,12 @@ if ($cpan) {
     $cache->dir->mkpath;
     my $fh = $cache->openw;
 
-    foreach my $dir (@Config::Config{qw(privlibexp archlibexp sitelibexp sitearchexp)}) {
+    foreach my $dir (@INC) {
+        next unless dir($dir)->is_absolute;
         my @files = File::Find::Rule->file->name('*.pm')->in($dir);
         foreach my $file (@files) {
-            $file =~ s"^$dir/"";
+            next if any { $file =~ /^\Q$_\E/ } grep { /^\Q$dir\E\// } @INC;
+            $file =~ s"^\Q$dir\E/"";
             $file =~ s/\.pm$//;
             $file =~ s'/'::'g;
             print $file, "\n";
